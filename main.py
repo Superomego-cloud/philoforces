@@ -9,7 +9,7 @@ DEFAULT = {"OPENFILE":True, "AUTOSAVE":False, "ONLINE":True, "WEB": "", "CDIR": 
 INDENT = lambda n: "\t"*n
 BR = lambda n: "\n"*n
 SPACE = lambda n: " "*n 
-QST = lambda q, f: {"qst": q, "file": f}
+QST = lambda q, f: {"qst": q, "file": f, "tags": ["none"], "issolved": False}
 is_saved = True
 
 def open_problem(pcode):
@@ -49,12 +49,6 @@ def init_database():
                 + "(settings -change) CDIR [dir] / (settings -change) DBPATH [dir]"
                 )
 
-def load_web(): 
-    
-    # queries either google drive or git for a cool file you need
-    
-    return 
-
 def save_database():
 
     global db
@@ -80,6 +74,17 @@ def load_settings():
     for k in DEFAULT: 
         if not settings.__contains__(k):  settings[k] = DEFAULT[k]
 
+def save_settings():
+
+    global settings
+
+    try: 
+        with open("settings.json", "w") as f:
+            json.dump(settings, f)
+
+    except: 
+        print("Error saving settings.")
+
 print("\x1b[2J\x1b[HPHILOFORCES TERMINAL EDITION V0")
 print("Made by yours truly. Print (help) for instructions." + BR(1))
 load_settings()
@@ -89,6 +94,7 @@ while True:
 
     ip = (input(">>> ") + " ").split(") ")
     cmd = [w.strip() for w in ((ip[0])[1:]).split(" ")]
+    args = []
 
     if(ip[1]): args = [w.strip() for w in ip[1].split(" : ")]
 
@@ -102,32 +108,41 @@ while True:
             print("(exit): leave." + BR(1))
             
             print("(settings [-option]): change program settings" + BR(1) + INDENT(1) + 
-                    "-print [*args]: prints queried settings" + BR(1) + INDENT(1) + 
+                    "-print [*args]: prints queried settings; leave empty to get all" + BR(1) + INDENT(1) + 
                     "-change [setting] [arg]: changes setting to passed argument" + BR(1)
-            )
-            
-            print("(random [-option]) [*args]: returns random question" + BR(1) + INDENT(1) + 
-                    "-tags [*args]: returns random question with any one of the tags passed as argument" + BR(1) + INDENT(1) + 
-                    "-philosophers [*args]: returns random question with any one of the passed philosophers" + BR(1)
             )
             
             print("(get) [pbcode]: opens problem associated to passed problem code" + BR(1))
             
             print("(set) [pbcode] : [question] : [file]: changes text entry associated to problem code to new file;" + " " 
                 + "if problem code doesn't exist, it will be added to the database" + BR(1))
-            
+        
             print("(delete) [pbcode]: deletes entry associated to passed problem code" + BR(1))
+
+            print("(tag) [pbcode] [*args]: adds tags to problem passed as argument." + BR(1))
+            
+            print("(list): lists all problems available in current database")
+
+            print("(random [-option]) [*args]: returns random question" + BR(1) + INDENT(1) + 
+                    "-tags [*args]: returns random question with any one of the tags passed as argument" + BR(1) + INDENT(1) + 
+                    "-philosophers [*args]: returns random question with any one of the passed philosophers" + BR(1)
+            )
             
             print("(save): saves changes done to current database. Exit without saving to get unedited version" + BR(1) + INDENT(1)
-                  + "-online: queries change to online repo via git; Only allowed for elevated git users." + BR(1))
+                  + "-online: queries change to online repo via git; Only allowed for elevated git users" + BR(1))
             
-            print("open: opens question database" + BR(1) + INDENT(1) + 
+            print("(open): opens question database" + BR(1) + INDENT(1) + 
                   "-online: queries file from git repo" + BR(1))
 
-        case "cdir":
+        case "settings":
 
-            if cmd[1] == "-print": print(os.getcwd())
-            else: os.chdir(args[0])
+            if cmd[1] == "-print": 
+                if args: 
+                    for k in args: print(k.ljust(10) + str(settings[k]))
+                else: 
+                    for k in settings: print(k.ljust(10) + str(settings[k]))
+
+            elif cmd[1] == "-change": settings[args[0]] = args[1]
 
         case "exit": 
             
@@ -136,9 +151,10 @@ while True:
 
                 ip = input("It seems you have some unsaved changes. Would you like to save them? [Y/N]: ")
                 ip = ip.strip()
-
                 if(ip == "Y"): save_database()
-                
+            
+            save_settings()
+
             exit()
 
         case "restart": init_database()
@@ -162,3 +178,10 @@ while True:
 
             del db["problems"][args[0]]
             is_saved = False
+
+        case "list":
+
+            for k in db["problems"]:
+
+                print(k + ": " + db["problems"][k])
+                print("tags: " + ", ".join(db["problems"][k]["tags"]))
