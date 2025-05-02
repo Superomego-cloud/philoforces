@@ -119,10 +119,10 @@ while True:
             print("(delete) [pbcode]: deletes entry associated to passed problem code" + BR(1))
             
             print("(save): saves changes done to current database. Exit without saving to get unedited version" + BR(1) + INDENT(1)
-                  + "-online: queries change to online repo via git; Only allowed for elevated users" + BR(1))
+                  + "-online: queries change to online repo via git; Only allowed for elevated git users." + BR(1))
             
             print("open: opens question database" + BR(1) + INDENT(1) + 
-                  "-online: requests latest online version from repo" + BR(1))
+                  "-online: queries file from git repo" + BR(1))
 
         case "cdir":
 
