@@ -1,4 +1,4 @@
-import os, json, random
+import os, json, random, datetime
 
 db = {}
 settings = {}
@@ -143,7 +143,14 @@ while True:
 
         case "restart": init_database()
 
-        case "save": save_database()
+        case "save": 
+
+            if(len(cmd) > 1):
+                if(cmd[1] == "-online"): 
+                    os.system(f"git commit -m 'Automatic change at {datetime.datetime.now().ctime()}'")
+                    os.system(f"git push philoforces")
+
+            save_database()
 
         case "get": open_problem(args[0])
 
