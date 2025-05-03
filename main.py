@@ -1,4 +1,4 @@
-import os, json, random, datetime
+import os, json, random, datetime, urllib.request
 
 db = {}
 settings = {}
@@ -46,7 +46,8 @@ def init_database():
     except: print("could not find JSON database." + " " 
                 + f"Make sure {settings['DBPATH']} is in current directory ({settings['CDIR']})" + " "
                 + "or change current directory / database file path with" + " "
-                + "(settings -change) CDIR [dir] / (settings -change) DBPATH [dir]"
+                + "(settings -change) CDIR [dir] / (settings -change) DBPATH [dir]" + " " +
+                "and reopen database with (open)"
                 )
 
 def save_database():
@@ -157,7 +158,14 @@ while True:
 
             exit()
 
-        case "restart": init_database()
+        case "open": 
+            
+            if(len(cmd) > 1):
+                if(cmd[1] == "-online"): urllib.request.urlretrieve(settings["WEB"], "db.json")
+            
+            init_database()
+
+
 
         case "save": 
 
@@ -181,7 +189,15 @@ while True:
 
         case "list":
 
+            print("")
+
             for k in db["problems"]:
 
-                print(k + ": " + db["problems"][k])
-                print("tags: " + ", ".join(db["problems"][k]["tags"]))
+                print(k + ": " + db["problems"][k]["qst"])
+                print("tags: " + ", ".join(db["problems"][k]["tags"]) + BR(1))
+
+        case "login": pass
+
+        case "clear": 
+            print("\x1b[2J\x1b[HPHILOFORCES TERMINAL EDITION V0")
+            print("Made by yours truly. Print (help) for instructions." + BR(1))
