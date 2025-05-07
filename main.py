@@ -26,19 +26,23 @@ def ret_time(i):
     
     return arr
 
-DEFAULT = {"user": {"OPENFILE":True, "AUTOSAVE":False}, "db": {"WEB": "", "CDIR": os.getcwd(), "DBPATH": "db.json"}}
+DEFAULT = {"user": {"OPENFILE":True}, "db": {"AUTOSAVE":False, "WEB": "", "CDIR": os.getcwd(), "DBPATH": "db.json"}}
 INDENT = lambda n: "\t"*n
 BR = lambda n: "\n"*n
 SPACE = lambda n: " "*n 
 COLOR = lambda t, r, g, b: f"\x1b[38;2;{r};{g};{b}m" + t + "\x1b[0m"
 QST = lambda q, f: {"qst": q, "file": f, "mtag": "ad hoc", "tags": []}
+LINEUP = lambda p: f"\x1b[{p}A"
+CLEARSCR = "\x1b[2J\x1b[H"
+CLEARSCREEN =  CLEARSCR + "PHILOFORCES TERMINAL EDITION V0" + BR(1) + "Made by yours truly. Print (help) for instructions." + BR(2)
+CLEARLINE = "\x1b[2K\r"
 is_saved = True
 
 def open_problem(pcode):
 
     global db
 
-    print("")
+    print(CLEARSCR, end="")
 
     try: print(pcode + ": " + db["problems"][pcode]["qst"] + BR(1))
     except KeyError: 
@@ -49,70 +53,106 @@ def open_problem(pcode):
 
 def handle_pbrequest(pcode):
 
-    s = input("What would you like to do?" + BR(1) + 
-              "(:t): start timer".ljust(30) + 
-              "(:f): open editorial".ljust(30) + 
-              "(:s): mark as solved".ljust(30) + 
-              "(:h): get problem tags (hints)" + BR(1) +
-              "(:c): close")
-    print("")
+    print("What would you like to do?" + BR(1) + 
+          "(:t): start timer".ljust(30) + 
+          "(:f): open editorial".ljust(30) + 
+          "(:s): mark as solved".ljust(30) + 
+          "(:h): get problem tags (hints)" + BR(1) +
+          "(:c): close" + BR(1))
 
-    match s.lower():
+    while True:
 
-        case "(:t)":
+        s = input("")
 
-            t0 = time.perf_counter()
-            input("Timer started. Press enter to stop.")
-            res = ret_time(time.perf_counter() - t0)
-            print(" ".join([str(int(res[i])) + ["d", "h", "min", "s"][i + 4 - len(res)] for i in range(len(res))]))
-            handle_pbrequest(pcode)
-        
-        case "(:h)": 
-            print("tags: " + ", ".join(db["problems"][pcode]["tags"]))
+        match s.lower():
 
-        case "(:s)": sv[pcode]["solved"] = True
+            case "(:t)":
 
-        case "(:f)":
+                t0 = time.perf_counter()
+                input("\x1b[1ATimer started. Press enter to stop.")
+                res = ret_time(time.perf_counter() - t0)
+                print("\x1b[1A\x1b[2K\r", end="") 
 
-            try: 
-                f = open(settings["CDIR"] + "/philoforces-db/question_pool/" + db["problems"][pcode]["file"], "x")
-                f.close()
-            except: 
-                pass
+                print("Attempt over. Time: " + 
+                      "".join(
+                          [str(int(res[i])) + ["d", "h", "min", "s"][i + 4 - len(res)] 
+                           for i in range(len(res))]
+                        )
+                    )
+            
+            case "(:h)":
 
-            os.startfile(settings["CDIR"] + "/philoforces-db/question_pool/" + db["problems"][pcode]["file"])
+                n = "none"
 
-        case "(:c)": return
+                if(not db["problems"][pcode]["tags"]):
+                    if (db["problems"][pcode]["mtag"] != "ad hoc"): n = db["problems"][pcode]["mtag"]
+                else:
+                    n = db["problems"][pcode]["mtag"] + ", " + ", ".join(db["problems"][pcode]["tags"])
+
+                print(LINEUP(1) + "tags: " + n)
+
+            case "(:s)": 
+                sv[pcode]["solved"] = True
+                print(LINEUP(1) + "Problem marked solved.")
+
+            case "(:f)":
+
+                try: 
+                    f = open(settings["db"]["CDIR"] + "/philoforces-db/question_pool/" + db["problems"][pcode]["file"], "x")
+                    f.close()
+                except: 
+                    pass
+                
+                os.startfile(settings["db"]["CDIR"] + "/philoforces-db/question_pool/" + db["problems"][pcode]["file"])
+                print(LINEUP(1) + "Editorial opened.")
+
+            case "(:c)":
+                print(CLEARSCREEN, end="") 
+                return
 
 def init_database():
     
     global db
 
     try: 
-
-        with open(settings["CDIR"] + "/philoforces-db/" + settings["DBPATH"], "r") as f:
+        with open(settings["db"]["CDIR"] + "/philoforces-db/" + settings["db"]["DBPATH"], "r") as f:
             db = json.load(f)
-
-        for k in db["problems"]:
-
-            if(not sv.__contains__(k)):
-
-                sv[k] = {}
-                sv[k]["Solved"] = False
-
-    except: print("could not find JSON database." + " " 
-                + f"Make sure {settings['DBPATH']} is in current directory ({settings['CDIR']})" + " "
+    except: 
+        print("could not find JSON database." + " " 
+                + f"Make sure {settings["db"]['DBPATH']} is in current directory ({settings["db"]['CDIR']})" + " "
                 + "or change current directory / database file path with" + " "
                 + "(settings -change) CDIR [dir] / (settings -change) DBPATH [dir]" + " " +
                 "and reopen database with (open)"
                 )
+        return
+
+    for k in db["problems"]:
+
+            if(not sv.__contains__(k)):
+
+                sv[k] = {}
+                sv[k]["solved"] = False
+
+    if(not db["tags"].__contains__("Ad hoc")):
+        db["tags"]["Ad hoc"] = [0]
+
+    for k in db["tags"]:
+
+        db["tags"][k][0] = 0
+
+        for p in db["tags"][k][1:]:
+            if(sv[p]["solved"]): db["tags"][k][0] += 1
 
 def save_database():
 
     global db
+    k = list(db["tags"].keys())
+
+    for t in k:
+        if (len(db["tags"][t]) == 1): del db["tags"][t]
 
     try:
-        with open(settings["CDIR"] + "/philoforces-db/" + settings["DBPATH"], "w") as f:
+        with open(settings["db"]["CDIR"] + "/philoforces-db/" + settings["db"]["DBPATH"], "w") as f:
             json.dump(db, f)
             return True
     except: 
@@ -161,10 +201,12 @@ def save2():
     except: 
         print("Error saving progress.")
 
-def help_common():
+def help_common(isend = True):
 
-    print(BR(1) + "Welcome to philoforces terminal edition.\n" +
-                  "Commands are used in the following format: (cmd [-options]) [*args -> arg1 : arg2 : ...]:" + BR(1))
+    print(CLEARSCR, end="")
+
+    print("Welcome to philoforces terminal edition." + BR(1) +
+            "Commands are used in the following format: (cmd [-options]) [*args -> arg1 : arg2 : ...]:" + BR(1))
 
     print("(exit): leave." + BR(1))
 
@@ -188,9 +230,12 @@ def help_common():
     print("(toggle) [pbcode]: toggles status of problem associated to problem code to solved/unsolved" + BR(1))
 
     print("(random [-option]) [*args]: returns random question" + BR(1) + INDENT(1) + 
-                    "-tags [*args]: returns random question with any one of the tags passed as argument" + BR(1) + INDENT(1) + 
-                    "-philosophers [*args]: returns random question with any one of the passed philosophers" + BR(1)
-            )
+                    "-tags [*args]: returns random question with any one of the tags passed as argument" + BR(1)
+        )
+    
+    if(isend):
+        input("Press Enter to reopen terminal.")
+        print(CLEARSCREEN, end="")
 
 def handle_common(cmd, args):
 
@@ -210,11 +255,16 @@ def handle_common(cmd, args):
 
                 else:
                     print("User settings:" + BR(1))
-                    for k in settings["user"]: print(k.ljust(10) + str(settings[k]))
+                    for k in settings["user"]: print(k.ljust(10) + str(settings["user"][k]))
 
-            elif cmd[1] == "-change": settings[args[0]] = args[1]
+                if(not mode): print("")
 
-            if(not mode): print("")
+            elif cmd[1] == "-change":
+
+                if(args[0] in settings["user"]):
+                    settings["user"][args[0]] = args[1]
+                else:
+                    print(f"Setting '{args[0]}' not found. No changes have been made.")
 
         case "open": 
             
@@ -225,9 +275,28 @@ def handle_common(cmd, args):
 
         case "get": open_problem(args[0])
 
+        case "random":
+
+            l = []
+            if(not args): l = list(db["problems"].keys())
+            else:
+                for t in args:
+                    for p in db["tags"][t][1:]: l.append(p)
+
+            if(not l): print("No problems to choose from. Load database with (open) or add problems in database mode.")
+            elif(len(l) == 1): open_problem(l[0])
+            else: 
+                r = random.randint(0, len(l) - 1)
+                open_problem(l[r])
+
         case "list":
 
+            if(not db["problems"]):
+                print("No problems to list.")
+                return
+
             if not args: args = db["tags"].keys() 
+            print("")
 
             for t in args:
 
@@ -242,7 +311,7 @@ def handle_common(cmd, args):
 
                 for p in pbarr[1:]:
                     
-                    x, y, z = ((0, 255, 0) if db["problems"][p]["solved"] else (255, 0, 0))
+                    x, y, z = ((0, 255, 0) if sv[p]["solved"] else (255, 0, 0))
                     print(COLOR(p + ": " + db["problems"][p]["qst"], x, y, z))
                 
                 print("")
@@ -250,13 +319,13 @@ def handle_common(cmd, args):
         case "toggle":
 
             try:
-                sv[args[0]]["Solved"] = not sv[args[0]]["Solved"]
+                sv[args[0]]["solved"] = not sv[args[0]]["solved"]
+                db["tags"][db["problems"][args[0]]["mtag"]][0] += (1 if sv[args[0]]["solved"] else -1)
             except KeyError:
                 print("Problem not found. Try again with correct problem name.")
 
         case "clear": 
-            print("\x1b[2J\x1b[HPHILOFORCES TERMINAL EDITION V0")
-            print("Made by yours truly. Print (help) for instructions." + BR(1))
+            print(CLEARSCREEN, end="")
 
 
 def user_mode(cmd, args):
@@ -277,7 +346,7 @@ def db_mode(cmd, args):
 
         case "help":
             
-            help_common()
+            help_common(False)
 
             print("===== ===== =====" + " ELEVATED COMMANDS " + "===== ===== =====" + BR(1))
 
@@ -286,18 +355,21 @@ def db_mode(cmd, args):
 
             print("(delete) [pbcode]: deletes entry associated to passed problem code" + BR(1))
 
-            print("(tag) [pbcode] [*args]: adds tags to problem passed as argument." + BR(1) + INDENT(1) +
+            print("(tag) [pbcode] : [*args] adds tags to problem passed as argument." + BR(1) + INDENT(1) +
                     "-main: sets first argument as main tag" + BR(1) + INDENT(1) +
                     "-delete: removes all tags" + BR(1))
 
             print("(save): saves changes done to current database. Exit without saving to get unedited version" + BR(1) + INDENT(1)
                   + "-online: queries change to online repo via git; Only allowed for elevated git users. Make sure you are logged in." + BR(1))
 
+            input("Press Enter to reopen terminal.")
+            print(CLEARSCREEN, end="")
+
         case "settings":
 
-            handle_common()
-
             if cmd[1] == "-print": 
+
+                handle_common(cmd, args)
 
                 if args:
                     for k in args:     
@@ -306,18 +378,27 @@ def db_mode(cmd, args):
                         except KeyError: pass
 
                 else: 
+                    
                     print(BR(1) + "Database settings:" + BR(1))
-                    for k in settings["db"]: print(k.ljust(10) + str(settings[k]))
-                
-            print("")
+                    for k in settings["db"]: print(k.ljust(10) + str(settings["db"][k]))
+                    print("")
 
+            elif cmd[1] == "-change":
+                
+                if(args[0] in settings["user"]):
+                    settings["user"][args[0]] = args[1]
+                elif (args[0] in settings["db"]):
+                    settings["db"][args[0]] = args[1]
+                else:
+                    print(f"Setting '{args[0]}' not found. No changes have been made.")
+                
         case "save": 
 
             if(len(cmd) > 1):
                 if(cmd[1] == "-online"):
                 
                     c = os.getcwd()
-                    os.chdir(settings["CDIR"] + "/philoforces-db")
+                    os.chdir(settings["db"]["CDIR"] + "/philoforces-db")
                     os.system("git add .")
                     os.system(f'git commit -m "Remote change done at {datetime.datetime.now().ctime()}"')
                     os.system("git branch -M main")
@@ -331,7 +412,21 @@ def db_mode(cmd, args):
 
         case "set": 
 
+            if(not db["problems"].__contains__(args[0])): 
+                db["tags"]["Ad hoc"].append(args[0])
+
             db["problems"][args[0]] = QST(args[1], args[2])
+            sv[args[0]] = {}
+            sv[args[0]]["solved"] = False
+
+            if(len(args) > 3): 
+                db["tags"]["Ad hoc"].remove(args[0])
+
+                if(not db["tags"].__contains__(args[3])): db["tags"][args[3]] = [0]
+                db["tags"][args[3]].append(args[0])
+                db["problems"][args[0]]["mtag"] = args[3]
+                for t in args[4:]: db["problems"][args[0]]["tags"].append(t)
+            
             is_saved = False
 
         case "tag":
@@ -341,21 +436,40 @@ def db_mode(cmd, args):
                     if(t not in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].push(t)
             else:
                 
-                db["problems"][args[0]]["mtag"] = args[1]
+                if(cmd[1] == "-delete"):
 
-                if(len(cmd) > 2):
+                    db["tags"][db["problems"][args[0]]["mtag"]].remove(args[0])
+                    db["problems"][args[0]]["mtag"] = "ad hoc"
+                    db["problems"][args[0]]["tags"] = []
+                    db["tags"]["ad hoc"].append(args[0])
+                
+                elif(cmd[1] == "-main"):
+
+                    if(args[1] in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].remove(args[1])
+                    
+                    if(sv[args[0]]["solved"]): 
+                        db["tags"][db["problems"][args[0]]["mtag"]][0] -= 1
+                        db["tags"][args[1]][0] += 1
+                    
+
+                    db["tags"][db["problems"][args[0]]["mtag"]].remove(args[0])
+                    db["problems"][args[0]]["mtag"] = args[1]
+                    db["tags"][args[1]].append(args[0])
+
                     for t in args[2:]: 
-                        if(t not in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].push(t)    
+                        if(t not in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].append(t)
+
 
         case "delete":
 
+            db["tags"][db["problems"][args[0]]["mtag"]].remove(args[0])
             del db["problems"][args[0]]
+            del sv[args[0]]
             is_saved = False
 
         case _: user_mode(cmd, args)
 
-print("\x1b[2J\x1b[HPHILOFORCES TERMINAL EDITION V0")
-print("Made by yours truly. Print (help) for instructions." + BR(1))
+print(CLEARSCREEN, end="")
 load_settings()
 load_save()
 init_database()
@@ -374,7 +488,7 @@ while True:
 
             case "exit": 
 
-                if(settings["AUTOSAVE"]): save_database()
+                if(settings["db"]["AUTOSAVE"]): save_database()
                 
                 elif(not is_saved): 
 
@@ -395,7 +509,6 @@ while True:
 
                 if(mode): db_mode(cmd, args)
                 else: user_mode(cmd, args)
-
 
     except IndexError:
         print("Incorrect amount of arguments.")
