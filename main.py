@@ -281,11 +281,12 @@ def handle_common(cmd, args):
             if(not args): l = list(db["problems"].keys())
             else:
                 for t in args:
+                    if(t not in db["tags"]): continue
                     for p in db["tags"][t][1:]: l.append(p)
 
             if(not l): print("No problems to choose from. Load database with (open) or add problems in database mode.")
             elif(len(l) == 1): open_problem(l[0])
-            else: 
+            else:
                 r = random.randint(0, len(l) - 1)
                 open_problem(l[r])
 
@@ -327,6 +328,9 @@ def handle_common(cmd, args):
         case "clear": 
             print(CLEARSCREEN, end="")
 
+        case _:
+            print("Command not found. Please try again.")
+
 
 def user_mode(cmd, args):
 
@@ -334,7 +338,6 @@ def user_mode(cmd, args):
 
         case "help": help_common() 
         case _:
-
             handle_common(cmd, args)
 
 
@@ -433,7 +436,7 @@ def db_mode(cmd, args):
 
             if(len(cmd) == 1):
                 for t in args[1:]: 
-                    if(t not in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].push(t)
+                    if(t not in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].append(t)
             else:
                 
                 if(cmd[1] == "-delete"):
@@ -454,6 +457,7 @@ def db_mode(cmd, args):
 
                     db["tags"][db["problems"][args[0]]["mtag"]].remove(args[0])
                     db["problems"][args[0]]["mtag"] = args[1]
+                    if(args[1] not in db["tags"]): db["tags"][args[1]] = [0]
                     db["tags"][args[1]].append(args[0])
 
                     for t in args[2:]: 
@@ -480,7 +484,9 @@ while True:
     cmd = [w.strip() for w in ((ip[0])[1:]).split(" ")]
     args = []
 
-    if(ip[1]): args = [w.strip() for w in ip[1].split(" : ")]
+    try:
+        if(ip[1]): args = [w.strip() for w in ip[1].split(" : ")]
+    except: pass
 
     try:
 
