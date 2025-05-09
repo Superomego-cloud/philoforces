@@ -31,7 +31,7 @@ INDENT = lambda n: "\t"*n
 BR = lambda n: "\n"*n
 SPACE = lambda n: " "*n 
 COLOR = lambda t, r, g, b: f"\x1b[38;2;{r};{g};{b}m" + t + "\x1b[0m"
-QST = lambda q, f: {"qst": q, "file": f, "mtag": "ad hoc", "tags": []}
+QST = lambda q, f: {"qst": q, "file": f, "mtag": "Ad hoc", "tags": []}
 LINEUP = lambda p: f"\x1b[{p}A"
 CLEARSCR = "\x1b[2J\x1b[H"
 CLEARSCREEN =  CLEARSCR + "PHILOFORCES TERMINAL EDITION V0" + BR(1) + "Made by yours truly. Print (help) for instructions." + BR(2)
@@ -85,7 +85,7 @@ def handle_pbrequest(pcode):
                 n = "none"
 
                 if(not db["problems"][pcode]["tags"]):
-                    if (db["problems"][pcode]["mtag"] != "ad hoc"): n = db["problems"][pcode]["mtag"]
+                    if (db["problems"][pcode]["mtag"] != "Ad hoc"): n = db["problems"][pcode]["mtag"]
                 else:
                     n = db["problems"][pcode]["mtag"] + ", " + ", ".join(db["problems"][pcode]["tags"])
 
@@ -415,6 +415,10 @@ def db_mode(cmd, args):
 
         case "set": 
 
+            if(len(args) < 3): 
+                print("Incorrect amount of arguments.")
+                return
+
             if(not db["problems"].__contains__(args[0])): 
                 db["tags"]["Ad hoc"].append(args[0])
 
@@ -442,9 +446,9 @@ def db_mode(cmd, args):
                 if(cmd[1] == "-delete"):
 
                     db["tags"][db["problems"][args[0]]["mtag"]].remove(args[0])
-                    db["problems"][args[0]]["mtag"] = "ad hoc"
+                    db["problems"][args[0]]["mtag"] = "Ad hoc"
                     db["problems"][args[0]]["tags"] = []
-                    db["tags"]["ad hoc"].append(args[0])
+                    db["tags"]["Ad hoc"].append(args[0])
                 
                 elif(cmd[1] == "-main"):
 
