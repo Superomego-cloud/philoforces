@@ -210,7 +210,7 @@ def help_common(isend = True):
 
     print("(exit): leave." + BR(1))
 
-    print("(mode): changes mode from user (user) to database editor (database)." + BR(1))
+    print("(mode) [mode-arg]: changes mode from user (user) to database editor (database)." + BR(1))
 
     print("(settings [-option]): change program settings" + BR(1) + INDENT(1) + 
                 "-print [*args]: prints queried settings; leave empty to get all" + BR(1) + INDENT(1) + 
@@ -397,6 +397,8 @@ def db_mode(cmd, args):
                 
         case "save": 
 
+            save_database()
+
             if(len(cmd) > 1):
                 if(cmd[1] == "-online"):
                 
@@ -410,7 +412,6 @@ def db_mode(cmd, args):
                     os.system(f"git push -u philoforces-db main")
                     os.chdir(c)
 
-            save_database()
             is_saved = True
 
         case "set": 
