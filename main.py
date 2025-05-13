@@ -149,7 +149,7 @@ def save_database():
     k = list(db["tags"].keys())
 
     for t in k:
-        if (len(db["tags"][t]) == 1): del db["tags"][t]
+        if (len(db["tags"][t]) == 1) and (t != "Ad hoc"): del db["tags"][t]
 
     try:
         with open(settings["db"]["CDIR"] + "/philoforces-db/" + settings["db"]["DBPATH"], "w") as f:
