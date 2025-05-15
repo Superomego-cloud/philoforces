@@ -1,6 +1,7 @@
-import os, json, random, datetime, time
+import os, json, random, datetime, time, copy
 
 db = {}
+bc = {}
 sv = {}
 settings = {}
 mode = 0
@@ -42,14 +43,38 @@ def open_problem(pcode):
 
     global db
 
-    print(CLEARSCR, end="")
-
-    try: print(pcode + ": " + db["problems"][pcode]["qst"] + BR(1))
+    try: 
+        print(CLEARSCR + pcode + ": " + db["problems"][pcode]["qst"] + BR(1))
     except KeyError: 
-        print("Problem code not found. Reload database with (open) or add entry with (set). See (help) for instructions." + BR(1))
+        print("Problem code not found. Reload database with (open) or add entry with (set). See (help) for instructions.")
         return
     
     handle_pbrequest(pcode)
+
+def create_problem(pbcode, qst, file, tags):
+
+    pb = QST(qst, file)
+    if tags:
+        pb["mtag"] = tags[0]
+        for t in tags[1:]:
+            pb["tags"].append(t)
+    else: 
+        pb["mtag"] = "Ad hoc" 
+        
+    if pb["mtag"] not in db["tags"]:
+        db["tags"][pb["mtag"]] = [0]
+
+    db["problems"][pbcode] = pb
+    db["tags"][pb["mtag"]].append(pbcode)
+    sv[pbcode] = {"solved": False} 
+    
+
+def delete_problem(pbcode):
+    
+    db["tags"][db["problems"][pbcode]["mtag"]].remove(pbcode)
+    del db["problems"][pbcode]
+    del sv[pbcode]
+
 
 def handle_pbrequest(pcode):
 
@@ -109,6 +134,9 @@ def handle_pbrequest(pcode):
             case "(:c)":
                 print(CLEARSCREEN, end="") 
                 return
+
+            case _:
+                print(LINEUP(1) + "Invalid command.")
 
 def init_database():
     
@@ -224,14 +252,13 @@ def help_common(isend = True):
 
     print("(get) [pbcode]: opens problem associated to passed problem code" + BR(1))
 
-    print("(list): lists all problems available in current database" + BR(1))
+    print("(list) [*args]: lists all problems available in current database, or problems in tags provided as arguments" + BR(1))
 
     # TODO: Implement random
     print("(toggle) [pbcode]: toggles status of problem associated to problem code to solved/unsolved" + BR(1))
 
-    print("(random [-option]) [*args]: returns random question" + BR(1) + INDENT(1) + 
-                    "-tags [*args]: returns random question with any one of the tags passed as argument" + BR(1)
-        )
+    print("(random [-option]) [*args]: returns random question from either the full problemset or the ones in tags provided as arguments" + BR(1) + INDENT(1) + 
+                "-unsolved: only picks unsolved questions from the pool" + BR(1)) 
     
     if(isend):
         input("Press Enter to reopen terminal.")
@@ -278,8 +305,14 @@ def handle_common(cmd, args):
         case "random":
 
             l = []
-            if(not args): l = list(db["problems"].keys())
+            if(not ("-tags" in cmd)):     
+                    l = list(db["problems"].keys())
             else:
+
+                if(not args):
+                    print("No tags provided. Please try again.")
+                    return
+
                 for t in args:
                     if(t not in db["tags"]): continue
                     for p in db["tags"][t][1:]: l.append(p)
@@ -288,6 +321,12 @@ def handle_common(cmd, args):
             elif(len(l) == 1): open_problem(l[0])
             else:
                 r = random.randint(0, len(l) - 1)
+                
+                if(len(cmd) > 1):
+                    if("-unsolved" in cmd):
+                        while(sv[l[r]]["solved"]):
+                            r = random.randint(0, len(l) - 1)
+                
                 open_problem(l[r])
 
         case "list":
@@ -296,11 +335,13 @@ def handle_common(cmd, args):
                 print("No problems to list.")
                 return
 
+            
             if not args: args = db["tags"].keys() 
             print("")
 
             for t in args:
 
+                if(t not in db["tags"]): continue
                 pbarr = db["tags"][t]
 
                 if(len(pbarr) == 1): continue
@@ -420,21 +461,10 @@ def db_mode(cmd, args):
                 print("Incorrect amount of arguments.")
                 return
 
-            if(not db["problems"].__contains__(args[0])): 
-                db["tags"]["Ad hoc"].append(args[0])
+            if(args[0] in db["problems"]):
+                delete_problem(args[0])
 
-            db["problems"][args[0]] = QST(args[1], args[2])
-            sv[args[0]] = {}
-            sv[args[0]]["solved"] = False
-
-            if(len(args) > 3): 
-                db["tags"]["Ad hoc"].remove(args[0])
-
-                if(not db["tags"].__contains__(args[3])): db["tags"][args[3]] = [0]
-                db["tags"][args[3]].append(args[0])
-                db["problems"][args[0]]["mtag"] = args[3]
-                for t in args[4:]: db["problems"][args[0]]["tags"].append(t)
-            
+            create_problem(args[0], args[1], args[2], args[3:])
             is_saved = False
 
         case "tag":
@@ -467,13 +497,12 @@ def db_mode(cmd, args):
 
                     for t in args[2:]: 
                         if(t not in db["problems"][args[0]]["tags"]): db["problems"][args[0]]["tags"].append(t)
+    
 
 
         case "delete":
 
-            db["tags"][db["problems"][args[0]]["mtag"]].remove(args[0])
-            del db["problems"][args[0]]
-            del sv[args[0]]
+            delete_problem(args[0])
             is_saved = False
 
         case _: user_mode(cmd, args)
@@ -509,7 +538,7 @@ while True:
                 
                 save_settings()
                 save2()
-                exit()
+                break
 
 
             case "mode":
@@ -521,5 +550,11 @@ while True:
                 if(mode): db_mode(cmd, args)
                 else: user_mode(cmd, args)
 
+        bc = copy.deepcopy(db)
+
     except IndexError:
         print("Incorrect amount of arguments.")
+    except:
+        print(CLEARSCREEN, end="")
+        print("There was an error handling this command. No changes have been made.")
+        db = copy.deepcopy(bc)
