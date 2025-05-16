@@ -1,12 +1,19 @@
 import os, json, random, datetime, time, copy
 
-db = {}
-bc = {}
-sv = {}
-settings = {}
-mode = 0
 random.seed()
 os.system("")
+
+
+DEFAULT = {"user": {"OPENFILE":True}, "db": {"AUTOSAVE":False, "WEB": "", "CDIR": os.getcwd(), "DBPATH": "db.json"}}
+INDENT = lambda n: "\t"*n
+BR = lambda n: "\n"*n
+SPACE = lambda n: " "*n 
+COLOR = lambda t, r, g, b: f"\x1b[38;2;{r};{g};{b}m" + t + "\x1b[0m"
+QST = lambda q, f: {"qst": q, "file": f, "mtag": "Ad hoc", "tags": []}
+LINEUP = lambda p: f"\x1b[{p}A"
+CLEARSCR = "\x1b[2J\x1b[H"
+CLEARSCREEN =  CLEARSCR + "PHILOFORCES TERMINAL EDITION V0" + BR(1) + "Made by yours truly. Type (help) for instructions." + BR(2)
+CLEARLINE = "\x1b[2K\r"
 
 def ret_time(i):
     
@@ -27,16 +34,6 @@ def ret_time(i):
     
     return arr
 
-DEFAULT = {"user": {"OPENFILE":True}, "db": {"AUTOSAVE":False, "WEB": "", "CDIR": os.getcwd(), "DBPATH": "db.json"}}
-INDENT = lambda n: "\t"*n
-BR = lambda n: "\n"*n
-SPACE = lambda n: " "*n 
-COLOR = lambda t, r, g, b: f"\x1b[38;2;{r};{g};{b}m" + t + "\x1b[0m"
-QST = lambda q, f: {"qst": q, "file": f, "mtag": "Ad hoc", "tags": []}
-LINEUP = lambda p: f"\x1b[{p}A"
-CLEARSCR = "\x1b[2J\x1b[H"
-CLEARSCREEN =  CLEARSCR + "PHILOFORCES TERMINAL EDITION V0" + BR(1) + "Made by yours truly. Print (help) for instructions." + BR(2)
-CLEARLINE = "\x1b[2K\r"
 is_saved = True
 
 def open_problem(pcode):
@@ -257,7 +254,7 @@ def help_common(isend = True):
     # TODO: Implement random
     print("(toggle) [pbcode]: toggles status of problem associated to problem code to solved/unsolved" + BR(1))
 
-    print("(random [-option]) [*args]: returns random question from either the full problemset or the ones in tags provided as arguments" + BR(1) + INDENT(1) + 
+    print("(random [-option]) [*args]: opens random question from either the full problemset or the ones in tags provided as arguments" + BR(1) + INDENT(1) + 
                 "-unsolved: only picks unsolved questions from the pool" + BR(1)) 
     
     if(isend):
@@ -507,6 +504,24 @@ def db_mode(cmd, args):
 
         case _: user_mode(cmd, args)
 
+db = {}
+bc = {}
+sv = {}
+settings = {}
+mode = 0
+
+try: 
+    log = open("log.txt", "x")
+except:
+    log = open("log.txt", "a")
+
+log.write(f"LOG FOR SESSION: {datetime.datetime.now().ctime()}\n")
+
+try:
+    bcf = open("backup.json", "x")
+except:
+    bcf = open("backup.json", "w")
+
 print(CLEARSCREEN, end="")
 load_settings()
 load_save()
@@ -514,7 +529,9 @@ init_database()
 
 while True:
 
-    ip = (input(">>> ") + " ").split(") ")
+    p = (input(">>> ") + " ")
+    log.write(p + "\n")
+    ip = p.split(") ")
     cmd = [w.strip() for w in ((ip[0])[1:]).split(" ")]
     args = []
 
@@ -538,6 +555,7 @@ while True:
                 
                 save_settings()
                 save2()
+                log.close()
                 break
 
 
@@ -551,10 +569,13 @@ while True:
                 else: user_mode(cmd, args)
 
         bc = copy.deepcopy(db)
+        json.dump(bc, bcf)
 
     except IndexError:
         print("Incorrect amount of arguments.")
-    except:
+    except Exception as e:
+        
         print(CLEARSCREEN, end="")
         print("There was an error handling this command. No changes have been made.")
+        log.write(e.args[0] + "\n")
         db = copy.deepcopy(bc)

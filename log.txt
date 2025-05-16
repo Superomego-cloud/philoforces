@@ -1,0 +1,38 @@
+LOG FOR SESSION: Fri May 16 20:03:46 2025
+can only concatenate list (not "str") to list
+LOG FOR SESSION: Fri May 16 20:04:59 2025
+(help) 
+(exit) 
+LOG FOR SESSION: Fri May 16 20:06:29 2025
+(list) Raison 
+(get) R1 
+(get) R2 
+(get) R3 
+(get) R4 
+(tag) R4 : Technique 
+(mode) database 
+(tag) R4 : Technique 
+(get) R5 
+(get) R5 
+(tag) R5 : Vérité 
+(get) R5 
+(get) R6 
+(get) D1 
+(set) D2 : La poursuite de l’intérêt général exige-t-elle le sacrifice de l’intérêt particulier? : d2.txt : Devoir 
+(get) D2 
+(set) D3 : Suffit-il d’avoir bonne conscience pour être sûr d’agir moralement? : d3.txt : Devoir : Conscience 
+(get) D2 
+(get) D3 
+(set) D4 : Accomplir son devoir, est-ce agir librement? : d4.txt : Devoir : Liberté 
+(list) liberté 
+(list) Liberté 
+(delete) D4 
+(get) L6 
+(set) D4 : Accomplir son devoir, est-ce agir librement? : d4.txt : Devoir : Liberté 
+(set) D5 : Est-ce un devoir de travailler? : d5.txt : Devoir : Travail 
+(set) D6 : Qu’avons-nous à gagner à faire notre devoir? : d6.txt : Devoir 
+(set) D7 : Qui peut me dire ce que je dois faire? : d7.txt : Devoir 
+(list) 
+(save) 
+(save -online) 
+(exit) 
